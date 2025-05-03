@@ -22,4 +22,5 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
 $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('/orders', 'OrderController@index');
+    $router->post('/orders', 'OrderController@store');
 });
