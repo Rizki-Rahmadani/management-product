@@ -24,3 +24,12 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('/orders', 'OrderController@index');
     $router->post('/orders', 'OrderController@store');
 });
+
+$router->group(['prefix' => 'api'], function () use ($router) {
+    $router->post('register', 'AuthController@register');
+    $router->post('login', 'AuthController@login');
+    
+    $router->group(['middleware' => 'jwt.auth'], function () use ($router) {
+        $router->get('profile', 'AuthController@profile');
+    });
+});
