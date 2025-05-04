@@ -78,6 +78,11 @@ class ProductController extends Controller
         $product = Product::find($id);
         if (!$product) return response()->json(['error' => 'Product not found'], 404);
 
+        $hasOrderItems = \DB::table('order_items')->where('product_id', $id)->exists();
+        if ($hasOrderItems) {
+        return response()->json(['error' => 'Cannot delete product. It is referenced in existing orders.'], 400);
+    }
+
         $product->delete();
         return response()->json(['message' => 'Product deleted successfully']);
     }
