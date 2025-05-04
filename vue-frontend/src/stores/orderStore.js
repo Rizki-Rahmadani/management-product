@@ -71,6 +71,9 @@ export default {
     SET_SELECTED_ORDER(state, orderId) {
       state.selectedOrderId = orderId;
     },
+    ADD_ORDER(state, order) {
+      state.orders.push(order);
+    },
   },
 
   actions: {
@@ -90,6 +93,66 @@ export default {
         return formattedOrders;
       } catch (error) {
         console.error("Failed to fetch orders:", error);
+        throw error;
+      } finally {
+        commit("SET_LOADING", false);
+      }
+    },
+
+    async createOrder({ commit, dispatch }, orderData) {
+      commit("SET_LOADING", true);
+      try {
+        // Format data sesuai dengan yang diharapkan backend
+        const formattedData = {
+          customer_name: orderData.customer_name,
+          order_date: orderData.order_date,
+          items: orderData.items.map((item) => ({
+            product_id: item.product_id,
+            quantity: parseInt(item.quantity),
+          })),
+        };
+
+        const response = await api.post("/orders", formattedData);
+
+        // Format response data
+        const newOrder = {
+          ...response.data,
+          order_date: new Date(response.data.order_date)
+            .toISOString()
+            .split("T")[0],
+          items: response.data.items.map((item) => ({
+            ...item,
+            price: parseFloat(item.price),
+          })),
+        };
+
+        commit("ADD_ORDER", newOrder);
+
+        // Update product stocks in the store
+        for (const item of orderData.items) {
+          await dispatch(
+            "product/updateProductStock",
+            {
+              productId: item.product_id,
+              quantity: item.quantity,
+            },
+            { root: true }
+          );
+        }
+
+        return newOrder;
+      } catch (error) {
+        console.error("Failed to create order:", error);
+        if (error.response) {
+          // Server merespons dengan error
+          if (error.response.status === 422) {
+            // Validation error
+            throw new Error(JSON.stringify(error.response.data.errors));
+          } else if (error.response.status === 400) {
+            // Business logic error (e.g., insufficient stock)
+            throw new Error(error.response.data.error);
+          }
+        }
         throw error;
       } finally {
         commit("SET_LOADING", false);

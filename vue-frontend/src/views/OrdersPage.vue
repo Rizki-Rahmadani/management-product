@@ -3,11 +3,15 @@ import { ref, computed, onMounted } from "vue";
 import { useToast } from "vue-toastification";
 import { useStore } from "vuex";
 import LoadingSpinner from "../components/LoadingSpinner.vue";
+import { useRouter } from "vue-router";
+import AddOrderPage from "../components/AddOrderPage.vue";
 
 const store = useStore();
 const toast = useToast();
 
 const orders = computed(() => store.getters["order/getAllOrders"]);
+const selectedOrder = ref(null);
+
 const loading = computed(() => store.state.order.loading);
 
 onMounted(async () => {
@@ -18,9 +22,25 @@ onMounted(async () => {
   }
 });
 
+// Format date for display
 const formatDate = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleDateString();
+};
+
+const showDialog = ref(false);
+
+const showAddOrderDialog = () => {
+  showDialog.value = true;
+};
+
+const closeDialog = () => {
+  showDialog.value = false;
+};
+
+const handleOrderAdded = (newOrder) => {
+  closeDialog();
+  store.dispatch("order/getAllOrders");
 };
 
 const formatPrice = (price) => {
@@ -34,8 +54,22 @@ const formatPrice = (price) => {
 <template>
   <div class="orders-page">
     <div class="page-header">
-      <h1>Orders</h1>
-      <button class="add-button">Add Order</button>
+      <h1>Orders - BACKUP</h1>
+      <button @click="showAddOrderDialog" class="add-button">Add Order</button>
+    </div>
+
+    <!-- Add Order Dialog -->
+    <div v-if="showDialog" class="dialog-overlay">
+      <div class="dialog-content">
+        <div class="dialog-header">
+          <div>
+            <h1>Create New Order</h1>
+            <p class="form-description">Fill in the order details below</p>
+          </div>
+          <button @click="closeDialog" class="close-button">&times;</button>
+        </div>
+        <AddOrderPage @close="closeDialog" @order-added="handleOrderAdded" />
+      </div>
     </div>
 
     <!-- Orders Table -->
