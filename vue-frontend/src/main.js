@@ -7,29 +7,31 @@ import router from "./router";
 import "./style.css";
 
 import productStore from "./stores/productStore";
+import orderStore from "./stores/orderStore";
 
 const store = createStore({
-    modules: {
-        product: productStore,
-    },
+  modules: {
+    order: orderStore,
+    product: productStore,
+  },
 });
 
 const app = createApp(App);
 
 // Toast notification options
 const toastOptions = {
-    position: "top-right",
-    timeout: 3000,
-    closeOnClick: true,
-    pauseOnFocusLoss: true,
-    pauseOnHover: true,
-    draggable: true,
-    draggablePercent: 0.6,
-    showCloseButtonOnHover: false,
-    hideProgressBar: false,
-    closeButton: "button",
-    icon: true,
-    rtl: false,
+  position: "top-right",
+  timeout: 3000,
+  closeOnClick: true,
+  pauseOnFocusLoss: true,
+  pauseOnHover: true,
+  draggable: true,
+  draggablePercent: 0.6,
+  showCloseButtonOnHover: false,
+  hideProgressBar: false,
+  closeButton: "button",
+  icon: true,
+  rtl: false,
 };
 
 app.use(store);
