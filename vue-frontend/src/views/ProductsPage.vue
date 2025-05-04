@@ -3,18 +3,24 @@ import { ref, onMounted, computed } from "vue";
 import { useToast } from "vue-toastification";
 import { useStore } from "vuex";
 import LoadingSpinner from "../components/LoadingSpinner.vue";
+import DeleteConfirmationDialog from "../components/DeleteConfirmationDialog.vue";
 
 const store = useStore();
 const toast = useToast();
 
 const showAddForm = ref(false);
+const editingProduct = ref(null);
+const showDeleteDialog = ref(false);
+const productToDelete = ref(null);
 
+// Form data
 const formData = ref({
   name: "",
   price: "",
   stock: "",
 });
 
+// Form validation
 const formErrors = ref({
   name: "",
   price: "",
@@ -33,6 +39,7 @@ onMounted(async () => {
   }
 });
 
+// Validation rules
 const validateForm = () => {
   let isValid = true;
   formErrors.value = {
@@ -41,6 +48,7 @@ const validateForm = () => {
     stock: "",
   };
 
+  // Name validation
   if (!formData.value.name) {
     formErrors.value.name = "Name is required";
     isValid = false;
@@ -49,6 +57,7 @@ const validateForm = () => {
     isValid = false;
   }
 
+  // Price validation
   if (!formData.value.price) {
     formErrors.value.price = "Price is required";
     isValid = false;
@@ -57,6 +66,7 @@ const validateForm = () => {
     isValid = false;
   }
 
+  // Stock validation
   if (formData.value.stock === "") {
     formErrors.value.stock = "Stock is required";
     isValid = false;
@@ -68,6 +78,7 @@ const validateForm = () => {
   return isValid;
 };
 
+// Reset form
 const resetForm = () => {
   formData.value = {
     name: "",
@@ -95,20 +106,82 @@ const addProduct = async () => {
     toast.error("Failed to add product");
   }
 };
+
+// Edit product
+const startEditProduct = (product) => {
+  editingProduct.value = product.id;
+  formData.value = {
+    name: product.name,
+    price: product.price.toString(),
+    stock: product.stock.toString(),
+  };
+  showAddForm.value = false;
+};
+
+// Update product
+const updateProduct = async () => {
+  if (!validateForm()) return;
+
+  try {
+    await store.dispatch("product/updateProduct", {
+      id: editingProduct.value,
+      ...formData.value,
+    });
+    toast.success("Product updated successfully");
+    resetForm();
+  } catch (error) {
+    toast.error("Failed to update product");
+  }
+};
+
+// Delete product
+const deleteProduct = async (id) => {
+  productToDelete.value = products.value.find((p) => p.id === id);
+  showDeleteDialog.value = true;
+};
+
+const handleDeleteConfirm = async () => {
+  try {
+    await store.dispatch("product/deleteProduct", productToDelete.value.id);
+    toast.success("Product deleted successfully");
+    showDeleteDialog.value = false;
+    productToDelete.value = null;
+  } catch (error) {
+    if (error.message.includes("referenced in existing orders")) {
+      toast.error(
+        "Cannot delete product. It is referenced in existing orders."
+      );
+    } else {
+      toast.error(error.message || "Failed to delete product");
+    }
+  }
+};
+
+const handleDeleteCancel = () => {
+  showDeleteDialog.value = false;
+  productToDelete.value = null;
+};
 </script>
 
 <template>
   <div class="products-page">
     <div class="page-header">
       <h1>Products</h1>
-      <button class="add-button" @click="showAddForm = !showAddForm">
+      <button
+        class="add-button"
+        @click="
+          showAddForm = !showAddForm;
+          editingProduct = null;
+        "
+        v-if="!editingProduct"
+      >
         {{ showAddForm ? "Cancel" : "Add Product" }}
       </button>
     </div>
 
-    <!-- Add Form -->
-    <div v-if="showAddForm" class="product-form">
-      <h2>Add New Product</h2>
+    <!-- Add/Edit Form -->
+    <div v-if="showAddForm || editingProduct" class="product-form">
+      <h2>{{ editingProduct ? "Edit Product" : "Add New Product" }}</h2>
       <div class="form-group">
         <label for="name">Name</label>
         <input
@@ -154,7 +227,16 @@ const addProduct = async () => {
 
       <div class="form-actions">
         <button @click="resetForm" class="secondary-button">Cancel</button>
-        <button @click="addProduct" class="primary-button">Add Product</button>
+        <button
+          v-if="editingProduct"
+          @click="updateProduct"
+          class="primary-button"
+        >
+          Update Product
+        </button>
+        <button v-else @click="addProduct" class="primary-button">
+          Add Product
+        </button>
       </div>
     </div>
 
@@ -316,7 +398,9 @@ const addProduct = async () => {
 }
 
 .table-container {
+  border-radius: 5px;
   overflow-x: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 table {
@@ -326,10 +410,10 @@ table {
 }
 
 th {
-  background-color: #f3f4f6;
+  background-color: #5a80e9;
   padding: 0.75rem 1rem;
   font-weight: 600;
-  color: #374151;
+  color: #eff3f8;
 }
 
 td {
