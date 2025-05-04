@@ -324,6 +324,12 @@ const handleDeleteCancel = () => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+.product-form h2 {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  color: #5a80e9;
+}
+
 .form-group {
   margin-bottom: 1rem;
 }
