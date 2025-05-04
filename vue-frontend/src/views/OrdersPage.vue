@@ -5,6 +5,7 @@ import { useStore } from "vuex";
 import LoadingSpinner from "../components/LoadingSpinner.vue";
 import { useRouter } from "vue-router";
 import AddOrderPage from "../components/AddOrderPage.vue";
+import OrderDetails from "../components/OrderDetails.vue";
 
 const store = useStore();
 const toast = useToast();
@@ -22,7 +23,10 @@ onMounted(async () => {
   }
 });
 
-// Format date for display
+const selectOrder = (order) => {
+  selectedOrder.value = selectedOrder.value?.id === order.id ? null : order;
+};
+
 const formatDate = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleDateString();
@@ -54,7 +58,7 @@ const formatPrice = (price) => {
 <template>
   <div class="orders-page">
     <div class="page-header">
-      <h1>Orders - BACKUP</h1>
+      <h1>Orders</h1>
       <button @click="showAddOrderDialog" class="add-button">Add Order</button>
     </div>
 
@@ -85,7 +89,13 @@ const formatPrice = (price) => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="order in orders" :key="order.id" class="clickable-row">
+          <tr
+            v-for="order in orders"
+            :key="order.id"
+            @click="selectOrder(order)"
+            :class="{ selected: selectedOrder?.id === order.id }"
+            class="clickable-row"
+          >
             <td>{{ order.id }}</td>
             <td>{{ order.customer_name }}</td>
             <td>{{ formatDate(order.order_date) }}</td>
@@ -104,6 +114,11 @@ const formatPrice = (price) => {
       <div v-else class="empty-state">
         <p>No orders found. Create your first order!</p>
       </div>
+    </div>
+
+    <!-- Order Details -->
+    <div>
+      <OrderDetails :order="selectedOrder" />
     </div>
   </div>
 </template>
