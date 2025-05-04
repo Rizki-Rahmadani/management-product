@@ -158,5 +158,9 @@ export default {
         commit("SET_LOADING", false);
       }
     },
+
+    setSelectedOrder({ commit }, orderId) {
+      commit("SET_SELECTED_ORDER", orderId);
+    },
   },
 };
