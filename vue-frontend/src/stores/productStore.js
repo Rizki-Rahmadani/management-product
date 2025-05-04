@@ -218,6 +218,10 @@ export default {
       }
     },
 
+    async updateProductStock({ commit }, { productId, quantity }) {
+      commit("UPDATE_PRODUCT_STOCK", { productId, quantity });
+    },
+
     async deleteProduct({ commit }, productId) {
       commit("SET_LOADING", true);
       try {
