@@ -194,7 +194,6 @@ const closeDialog = () => {
 <template>
   <div class="add-order-page">
     <div class="order-form">
-
       <div class="form-sections">
         <!-- Customer Info Section -->
         <div class="form-section">
