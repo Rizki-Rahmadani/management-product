@@ -18,12 +18,12 @@
           <tr v-for="(item, index) in orderItems" :key="index">
             <td>{{ item.product.name }}</td>
             <td>{{ item.quantity }}</td>
-            <td>Rp. {{ item.price.toFixed(2) }},-</td>
-            <td>Rp. {{ item.subtotal.toFixed(2) }},-</td>
+            <td>{{ formatPrice(item.price) }}</td>
+            <td>{{ formatPrice(item.subtotal) }}</td>
           </tr>
           <tr class="total-row">
             <td colspan="3" class="total-label">Total</td>
-            <td>Rp. {{ order.total_price.toFixed(2) }},-</td>
+            <td>{{ formatPrice(order.total_price) }}</td>
           </tr>
         </tbody>
       </table>
@@ -52,6 +52,15 @@ const orderItems = computed(() => {
 const formatDate = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleDateString();
+};
+
+const formatPrice = (price) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(price);
 };
 </script>
 

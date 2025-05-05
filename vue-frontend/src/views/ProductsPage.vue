@@ -161,6 +161,15 @@ const handleDeleteCancel = () => {
   showDeleteDialog.value = false;
   productToDelete.value = null;
 };
+
+const formatPrice = (price) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(price);
+};
 </script>
 
 <template>
@@ -256,7 +265,7 @@ const handleDeleteCancel = () => {
           <tr v-for="product in products" :key="product.id">
             <td>{{ product.id }}</td>
             <td>{{ product.name }}</td>
-            <td>Rp. {{ product.price.toFixed(2) }},-</td>
+        <td>{{formatPrice(product.price)}}</td>
             <td>{{ product.stock }}</td>
             <td class="action-buttons">
               <button @click="startEditProduct(product)" class="edit-button">

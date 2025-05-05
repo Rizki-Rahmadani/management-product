@@ -57,6 +57,16 @@ const totalPrice = computed(() => {
   }, 0);
 });
 
+// Format price to Indonesian Rupiah
+const formatPrice = (price) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(price);
+};
+
 // Validate quantity input against available stock
 const validateQuantity = () => {
   errors.value.selectedQuantity = "";
@@ -194,140 +204,154 @@ const closeDialog = () => {
 <template>
   <div class="add-order-page">
     <div class="order-form">
-      <div class="form-sections">
-        <!-- Customer Info Section -->
-        <div class="form-section">
-          <h2>Customer Information</h2>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="customerName">Customer Name</label>
-              <input
-                type="text"
-                id="customerName"
-                v-model="customerName"
-                placeholder="Enter customer name"
-                :class="{ error: errors.customerName }"
-              />
-              <span class="error-message" v-if="errors.customerName">{{
-                errors.customerName
-              }}</span>
-            </div>
+      <!-- <div class="form-header">
+        <h1>Create New Order</h1>
+        <p>Fill in the details below to create a new order</p>
+      </div> -->
 
-            <div class="form-group">
-              <label for="orderDate">Order Date</label>
-              <input
-                type="date"
-                id="orderDate"
-                v-model="orderDate"
-                :class="{ error: errors.orderDate }"
-              />
-              <span class="error-message" v-if="errors.orderDate">{{
-                errors.orderDate
-              }}</span>
+      <div class="form-content">
+        <!-- Left Section - Customer Info -->
+        <div class="form-left">
+          <div class="form-card">
+            <div class="card-header">
+              <i class="icon">👤</i>
+              <h2>Customer Information</h2>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label for="customerName">Customer Name</label>
+                <div class="input-wrapper">
+                  <i class="icon">👤</i>
+                  <input
+                    type="text"
+                    id="customerName"
+                    v-model="customerName"
+                    placeholder="Enter customer name"
+                    :class="{ error: errors.customerName }"
+                  />
+                </div>
+                <span class="error-message" v-if="errors.customerName">{{
+                  errors.customerName
+                }}</span>
+              </div>
+
+              <div class="form-group">
+                <label for="orderDate">Order Date</label>
+                <div class="input-wrapper">
+                  <i class="icon">📅</i>
+                  <input
+                    type="date"
+                    id="orderDate"
+                    v-model="orderDate"
+                    :class="{ error: errors.orderDate }"
+                  />
+                </div>
+                <span class="error-message" v-if="errors.orderDate">{{
+                  errors.orderDate
+                }}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Add Items Section -->
-        <div class="form-section">
-          <h2>Add Order Items</h2>
-          <div class="form-row">
-            <div class="form-group">
-              <label for="product">Product</label>
-              <select
-                id="product"
-                v-model="selectedProductId"
-                :class="{ error: errors.selectedProductId }"
-              >
-                <option value="">Select a product</option>
-                <option
-                  v-for="product in products"
-                  :key="product.id"
-                  :value="product.id"
-                  :disabled="product.stock <= 0"
+        <!-- Right Section - Order Items -->
+        <div class="form-right">
+          <div class="form-card">
+            <div class="card-header">
+              <i class="icon">🛒</i>
+              <h2>Add Products</h2>
+            </div>
+            <div class="card-body">
+              <div class="product-selection">
+                <div class="form-group">
+                  <label for="product">Select Product</label>
+                  <div class="input-wrapper">
+                    <i class="icon">📦</i>
+                    <select
+                      id="product"
+                      v-model="selectedProductId"
+                      :class="{ error: errors.selectedProductId }"
+                    >
+                      <option value="">Choose a product</option>
+                      <option
+                        v-for="product in products"
+                        :key="product.id"
+                        :value="product.id"
+                        :disabled="product.stock <= 0"
+                      >
+                        {{ product.name }} (Stock: {{ product.stock }})
+                      </option>
+                    </select>
+                  </div>
+                  <span class="error-message" v-if="errors.selectedProductId">{{
+                    errors.selectedProductId
+                  }}</span>
+                </div>
+
+                <div class="form-group">
+                  <label for="quantity">Quantity</label>
+                  <div class="input-wrapper">
+                    <i class="icon">🔢</i>
+                    <input
+                      type="number"
+                      id="quantity"
+                      v-model="selectedQuantity"
+                      min="1"
+                      :max="selectedProduct ? selectedProduct.stock : 999"
+                      :disabled="!selectedProduct"
+                      :class="{ error: errors.selectedQuantity }"
+                    />
+                  </div>
+                  <span class="error-message" v-if="errors.selectedQuantity">{{
+                    errors.selectedQuantity
+                  }}</span>
+                </div>
+
+                <button
+                  @click="addItem"
+                  class="add-item-button"
+                  :disabled="!selectedProductId || loading"
                 >
-                  {{ product.name }} (Stock: {{ product.stock }})
-                </option>
-              </select>
-              <span class="error-message" v-if="errors.selectedProductId">{{
-                errors.selectedProductId
-              }}</span>
+                  <i class="icon">+</i> Add to Order
+                </button>
+              </div>
+
+              <div class="order-summary">
+                <h3>Order Summary</h3>
+                <div v-if="orderItems.length > 0" class="items-list">
+                  <div
+                    v-for="(item, index) in orderItems"
+                    :key="index"
+                    class="order-item"
+                  >
+                    <div class="item-info">
+                      <span class="item-name">{{ item.product_name }}</span>
+                      <span class="item-quantity">x{{ item.quantity }}</span>
+                    </div>
+                    <div class="item-actions">
+                      <span class="item-price">{{
+                        formatPrice(item.subtotal)
+                      }}</span>
+                      <button @click="removeItem(index)" class="remove-button">
+                        <i class="icon">×</i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="empty-cart">
+                  <i class="icon">🛒</i>
+                  <p>No items added yet</p>
+                </div>
+                <div class="total-section">
+                  <span>Total</span>
+                  <span class="total-price">{{ formatPrice(totalPrice) }}</span>
+                </div>
+              </div>
             </div>
-
-            <div class="form-group">
-              <label for="quantity">Quantity</label>
-              <input
-                type="number"
-                id="quantity"
-                v-model="selectedQuantity"
-                min="1"
-                :max="selectedProduct ? selectedProduct.stock : 999"
-                :disabled="!selectedProduct"
-                :class="{ error: errors.selectedQuantity }"
-              />
-              <span class="error-message" v-if="errors.selectedQuantity">{{
-                errors.selectedQuantity
-              }}</span>
-            </div>
-
-            <div class="form-group button-group">
-              <button
-                @click="addItem"
-                class="add-item-button"
-                :disabled="!selectedProductId || loading"
-              >
-                <i class="icon">+</i> Add Item
-              </button>
-            </div>
-          </div>
-
-          <div v-if="errors.orderItems" class="error-message">
-            {{ errors.orderItems }}
-          </div>
-        </div>
-
-        <!-- Order Items Table -->
-        <div class="form-section">
-          <h2>Order Items Summary</h2>
-          <div class="table-container" v-if="orderItems.length > 0">
-            <table>
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Price</th>
-                  <th>Subtotal</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(item, index) in orderItems" :key="index">
-                  <td>{{ item.product_name }}</td>
-                  <td>{{ item.quantity }}</td>
-                  <td>${{ item.price.toFixed(2) }}</td>
-                  <td>${{ item.subtotal.toFixed(2) }}</td>
-                  <td>
-                    <button @click="removeItem(index)" class="remove-button">
-                      <i class="icon">×</i> Remove
-                    </button>
-                  </td>
-                </tr>
-                <tr class="total-row">
-                  <td colspan="3" class="total-label">Total</td>
-                  <td colspan="2">${{ totalPrice.toFixed(2) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div v-else class="empty-cart">
-            <i class="icon">🛒</i>
-            <p>No items added yet</p>
           </div>
         </div>
       </div>
 
-      <!-- Form Actions -->
       <div class="form-actions">
         <button @click="closeDialog" class="cancel-button">
           <i class="icon">←</i> Cancel
@@ -343,7 +367,6 @@ const closeDialog = () => {
       </div>
     </div>
 
-    <!-- Loading Overlay -->
     <div v-if="loading" class="loading-overlay">
       <LoadingSpinner />
     </div>
@@ -353,237 +376,278 @@ const closeDialog = () => {
 <style scoped>
 .add-order-page {
   padding: 2rem;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
+  background: linear-gradient(135deg, #f6f7fb 0%, #f0f2f5 100%);
+  min-height: 100vh;
 }
 
 .order-form {
   background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
   overflow: hidden;
 }
 
 .form-header {
-  padding: 1.5rem;
-  background-color: #f8fafc;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: white;
+  text-align: center;
 }
 
 .form-header h1 {
   margin: 0;
-  font-size: 1.5rem;
-  color: #1f2937;
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
 }
 
-.form-description {
-  margin: 0.5rem 0 0;
-  color: #6b7280;
-  font-size: 0.875rem;
+.form-header p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 1.1rem;
 }
 
-.form-sections {
+.form-content {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.form-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.card-header {
   padding: 1.5rem;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid #e5e7eb;
 }
 
-.form-section {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background-color: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-}
-
-.form-section h2 {
-  margin: 0 0 1rem;
+.card-header h2 {
+  margin: 0;
   font-size: 1.25rem;
   color: #1f2937;
 }
 
-.form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1rem;
+.card-header .icon {
+  font-size: 1.5rem;
+}
+
+.card-body {
+  padding: 1.5rem;
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
   font-weight: 500;
   color: #374151;
 }
 
-.form-group input,
-.form-group select {
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 1rem;
-  transition: all 0.2s ease;
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.input-wrapper .icon {
+  position: absolute;
+  left: 1rem;
+  color: #6b7280;
+}
+
+.input-wrapper input,
+.input-wrapper select {
+  width: 100%;
+  padding: 0.875rem 1rem 0.875rem 3rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 1rem;
+  background-color: #f9fafb;
+  transition: all 0.3s ease;
+}
+
+.input-wrapper input:focus,
+.input-wrapper select:focus {
   outline: none;
   border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-}
-
-.form-group input.error,
-.form-group select.error {
-  border-color: #ef4444;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
 }
 
 .error-message {
   color: #ef4444;
   font-size: 0.875rem;
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
+  display: block;
 }
 
-.button-group {
-  display: flex;
-  align-items: flex-end;
-  justify-content: end;
+.product-selection {
+  margin-bottom: 2rem;
 }
 
 .add-item-button {
-  background-color: #5a80e9;
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1rem;
+  border-radius: 10px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  margin-top: 1rem;
 }
 
 .add-item-button:hover:not(:disabled) {
-  background-color: #4338ca;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(79, 70, 229, 0.15);
 }
 
-.add-item-button:disabled {
-  background-color: #9ca3af;
-  cursor: not-allowed;
+.order-summary {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
 }
 
-.table-container {
-  overflow-x: auto;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
+.order-summary h3 {
+  margin: 0 0 1rem;
+  color: #1f2937;
+  font-size: 1.1rem;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-th {
-  background-color: #f3f4f6;
-  padding: 1rem;
-  font-weight: 600;
-  color: #374151;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-td {
-  padding: 1rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.total-row {
-  font-weight: 600;
-  background-color: #f8fafc;
-}
-
-.total-label {
-  text-align: right;
-}
-
-.remove-button {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.remove-button:hover {
-  background-color: #dc2626;
-}
-
-.empty-cart {
-  text-align: center;
-  padding: 2rem;
-  color: #6b7280;
-  background-color: #f9fafb;
-  border-radius: 6px;
-  border: 1px dashed #d1d5db;
-}
-
-.empty-cart .icon {
-  font-size: 2rem;
+.items-list {
+  max-height: 300px;
+  overflow-y: auto;
   margin-bottom: 1rem;
 }
 
+.order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.item-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.item-name {
+  font-weight: 500;
+}
+
+.item-quantity {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.item-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.item-price {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.remove-button {
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-button:hover {
+  background: #fecaca;
+}
+
+.total-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  font-weight: 600;
+}
+
+.total-price {
+  color: #4f46e5;
+  font-size: 1.2rem;
+}
+
 .form-actions {
+  padding: 2rem;
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  padding: 1.5rem;
-  background-color: #f8fafc;
-  border-top: 1px solid #e5e7eb;
 }
 
 .cancel-button {
-  background-color: #e5e7eb;
+  padding: 0.875rem 1.5rem;
+  background: #f3f4f6;
   color: #4b5563;
   border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
 .cancel-button:hover {
-  background-color: #d1d5db;
+  background: #e5e7eb;
 }
 
 .create-button {
-  background-color: #10b981;
+  padding: 0.875rem 2rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .create-button:hover:not(:disabled) {
-  background-color: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.15);
 }
 
 .create-button:disabled {
-  background-color: #9ca3af;
+  background: #9ca3af;
   cursor: not-allowed;
 }
 
@@ -593,11 +657,18 @@ td {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+}
+
+@media (max-width: 1024px) {
+  .form-content {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -605,31 +676,20 @@ td {
     padding: 1rem;
   }
 
-  .form-row {
-    grid-template-columns: 1fr;
+  .form-header {
+    padding: 1.5rem;
+  }
+
+  .form-content {
+    padding: 1rem;
   }
 
   .form-actions {
     flex-direction: column;
   }
 
-  .form-actions button,
-  .form-actions a {
+  .form-actions button {
     width: 100%;
-    justify-content: center;
-  }
-
-  .button-group {
-    display: flex;
-    justify-content: flex-end;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 891px) {
-  .button-group {
-    display: flex;
-    align-items: flex-start;
-    justify-content: end;
   }
 }
 </style>
