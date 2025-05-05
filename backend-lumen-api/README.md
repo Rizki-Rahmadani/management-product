@@ -9,6 +9,25 @@ Laravel Lumen is a stunningly fast PHP micro-framework for building web applicat
 
 > **Note:** In the years since releasing Lumen, PHP has made a variety of wonderful performance improvements. For this reason, along with the availability of [Laravel Octane](https://laravel.com/docs/octane), we no longer recommend that you begin new projects with Lumen. Instead, we recommend always beginning new projects with [Laravel](https://laravel.com).
 
+## Overview
+
+This is a backend API built using the **Laravel Lumen** framework. It is designed to handle product and order management with JWT-based authentication.
+
+## Features
+
+- Product management (CRUD operations)
+- Order management with stock validation
+- JWT-based authentication for secure access
+- Database transactions for consistent data handling
+- RESTful API structure
+
+## Requirements
+
+- PHP >= 8.0
+- Composer
+- MySQL or compatible database
+- Laravel Lumen >= 9.x
+
 ## Official Documentation
 
 Documentation for the framework can be found on the [Lumen website](https://lumen.laravel.com/docs).

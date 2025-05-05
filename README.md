@@ -47,7 +47,6 @@ php -S localhost:8000 -t public
 ```json
 {
     "name": "Product Name",
-    "description": "Product Description",
     "price": 100000,
     "stock": 50
 }
@@ -60,7 +59,6 @@ php -S localhost:8000 -t public
 ```json
 {
     "name": "Updated Product Name",
-    "description": "Updated Description",
     "price": 150000,
     "stock": 30
 }
